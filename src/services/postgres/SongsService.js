@@ -18,7 +18,7 @@ class SongsServices {
         duration,
         albumId,
     }) {
-        const id = nanoid(32);
+        const id = `song_${nanoid(32)}`;
 
         const query = {
             text: 'INSERT INTO songs (id, title, year, genre, performer, duration, album_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
@@ -27,7 +27,7 @@ class SongsServices {
 
         const result = await this._pool.query(query);
 
-        if (!result.rows[0].id) {
+        if (result.rows.length !== 1) {
             throw new InvariantError('Failed to add song');
         }
 
@@ -35,11 +35,11 @@ class SongsServices {
     }
 
     async getSongs({ title, performer }) {
-        let result = await this._pool.query('SELECT id, title, performer FROM songs');
-        result = result.rows;
+        const result = await this._pool.query('SELECT id, title, performer FROM songs');
+        let resultRows = result.rows;
 
         if (title != null) {
-            result = result.filter(
+            resultRows = resultRows.filter(
                 (v) => v.title
                     .toLowerCase()
                     .includes(title.toLowerCase()),
@@ -47,14 +47,14 @@ class SongsServices {
         }
 
         if (performer != null) {
-            result = result.filter(
+            resultRows = resultRows.filter(
                 (v) => v.performer
                     .toLowerCase()
                     .includes(performer.toLowerCase()),
             );
         }
 
-        return result.map(mapSongsDBToSongModel);
+        return resultRows.map(mapSongsDBToSongModel);
     }
 
     async getSongById(id) {

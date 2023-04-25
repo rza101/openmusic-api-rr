@@ -10,7 +10,7 @@ class AlbumsService {
     }
 
     async addAlbum({ name, year }) {
-        const id = nanoid(32);
+        const id = `album_${nanoid(32)}`;
 
         const query = {
             text: 'INSERT INTO albums (id, name, year) VALUES ($1, $2, $3) RETURNING id',
@@ -19,7 +19,7 @@ class AlbumsService {
 
         const result = await this._pool.query(query);
 
-        if (!result.rows[0].id) {
+        if (result.rows.length !== 1) {
             throw new InvariantError('Failed to add album');
         }
 

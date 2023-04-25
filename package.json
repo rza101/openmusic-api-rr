@@ -1,6 +1,6 @@
 {
   "name": "openmusic-api",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Proyek Belajar Fundamental Aplikasi Back-End Dicoding",
   "main": "index.js",
   "scripts": {
@@ -13,6 +13,8 @@
   "license": "ISC",
   "dependencies": {
     "@hapi/hapi": "^21.3.0",
+    "@hapi/jwt": "^3.2.0",
+    "bcrypt": "^5.1.0",
     "dotenv": "^16.0.3",
     "joi": "^17.9.1",
     "nanoid": "^3.1.20",
