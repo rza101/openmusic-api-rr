@@ -12,6 +12,8 @@ class CollaborationsService {
     async addCollaboration({ playlistId, userId }) {
         const id = `collab_${nanoid(32)}`;
 
+        // TODO Jadikan ini sebagai fungsi terpisah agar lebih clean,
+        // sebaiknya satu fungsi hanya memiliki satu tanggungjawab
         const checkPlaylistResult = await this._pool.query({
             text: 'SELECT id FROM playlists WHERE id = $1',
             values: [playlistId],

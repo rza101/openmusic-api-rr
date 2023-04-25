@@ -16,6 +16,8 @@ class PlaylistsHandler {
         this._validator.validatePlaylistPayload(request.payload);
 
         const { name } = request.payload;
+        // TODO Kamu bisa langsung masukkan nilai id
+        // ke variable owner sesuai kebutuhan fungsi addPlaylist
         const { id: userIdCredential } = request.auth.credentials;
 
         const playlistId = await this._playlistsService.addPlaylist({

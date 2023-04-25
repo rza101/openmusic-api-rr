@@ -19,6 +19,8 @@ class AlbumsService {
 
         const result = await this._pool.query(query);
 
+        // TODO Kamu bisa menggunakan result.rowCount untuk
+        // menggantikan penggunaan result.rows.length. Karena sintaksnya lebih singkat
         if (result.rows.length !== 1) {
             throw new InvariantError('Failed to add album');
         }
@@ -37,6 +39,9 @@ class AlbumsService {
             throw new NotFoundError('Album not found');
         }
 
+        // TODO Agar code menjadi lebih clean, sebaiknya fungsi ini
+        // hanya melakukan query data album saja. Kamu dapat membuat fungsi
+        // query songs by album id di song service, lalu panggil dan gabungkan datanya pada handler.
         const querySongs = {
             text: 'SELECT id, title, performer FROM songs WHERE album_id = $1',
             values: [id],
