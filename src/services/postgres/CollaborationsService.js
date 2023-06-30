@@ -2,7 +2,6 @@
 const { nanoid } = require('nanoid');
 const { Pool } = require('pg');
 const InvariantError = require('../../exceptions/InvariantError');
-const NotFoundError = require('../../exceptions/NotFoundError');
 
 class CollaborationsService {
     constructor() {
@@ -12,32 +11,12 @@ class CollaborationsService {
     async addCollaboration({ playlistId, userId }) {
         const id = `collab_${nanoid(32)}`;
 
-        // TODO Jadikan ini sebagai fungsi terpisah agar lebih clean,
-        // sebaiknya satu fungsi hanya memiliki satu tanggungjawab
-        const checkPlaylistResult = await this._pool.query({
-            text: 'SELECT id FROM playlists WHERE id = $1',
-            values: [playlistId],
-        });
-
-        const checkUserResult = await this._pool.query({
-            text: 'SELECT id FROM users WHERE id = $1',
-            values: [userId],
-        });
-
-        if (checkPlaylistResult.rows.length !== 1) {
-            throw new NotFoundError('Failed to add collaboration (playlist not found)');
-        }
-
-        if (checkUserResult.rows.length !== 1) {
-            throw new NotFoundError('Failed to add collaboration (user not found)');
-        }
-
         const result = await this._pool.query({
             text: 'INSERT INTO collaborations VALUES($1, $2, $3) RETURNING id',
             values: [id, playlistId, userId],
         });
 
-        if (result.rows.length !== 1) {
+        if (result.rowCount !== 1) {
             throw new InvariantError('Failed to add collaboration');
         }
 
@@ -50,7 +29,7 @@ class CollaborationsService {
             values: [playlistId, userId],
         });
 
-        if (result.rows.length !== 1) {
+        if (result.rowCount !== 1) {
             throw new InvariantError('Collaboration not exists');
         }
     }
@@ -61,7 +40,7 @@ class CollaborationsService {
             values: [playlistId, userId],
         });
 
-        if (result.rows.length !== 1) {
+        if (result.rowCount !== 1) {
             throw new InvariantError('Failed to delete collaboration (not found)');
         }
     }

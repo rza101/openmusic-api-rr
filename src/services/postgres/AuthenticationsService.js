@@ -28,7 +28,7 @@ class AuthenticationsService {
             values: [refreshToken],
         });
 
-        if (result.rows.length !== 1) {
+        if (result.rowCount !== 1) {
             throw new InvariantError('Invalid refresh token');
         }
     }

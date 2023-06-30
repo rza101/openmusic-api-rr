@@ -19,11 +19,24 @@ class PlaylistService {
             values: [id, name, owner],
         });
 
-        if (result.rows.length !== 1) {
+        if (result.rowCount !== 1) {
             throw new InvariantError('Failed to add playlist');
         }
 
         return result.rows[0].id;
+    }
+
+    async getPlaylistById(id) {
+        const result = await this._pool.query({
+            text: 'SELECT * FROM playlists WHERE id = $1',
+            values: [id],
+        });
+
+        if (result.rowCount !== 1) {
+            throw new NotFoundError('Playlist not found');
+        }
+
+        return result.rows[0];
     }
 
     async getPlaylists(userId) {
@@ -46,7 +59,7 @@ class PlaylistService {
             values: [id],
         });
 
-        if (result.rows.length !== 1) {
+        if (result.rowCount !== 1) {
             throw new InvariantError('Failed to delete playlist (not found)');
         }
     }
@@ -57,7 +70,7 @@ class PlaylistService {
             values: [playlistId],
         });
 
-        if (result.rows.length !== 1) {
+        if (result.rowCount !== 1) {
             throw new NotFoundError('Playlist not found');
         }
 

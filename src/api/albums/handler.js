@@ -1,8 +1,9 @@
 /* eslint-disable no-underscore-dangle */
 class AlbumsHandler {
-    constructor(albumsService, albumLikesService, storageService, validator) {
+    constructor(albumsService, albumLikesService, songsService, storageService, validator) {
         this._albumsService = albumsService;
         this._albumLikesService = albumLikesService;
+        this._songsService = songsService;
         this._storageService = storageService;
         this._validator = validator;
     }
@@ -24,15 +25,15 @@ class AlbumsHandler {
     }
 
     async postAlbumCoverHandler(request, h) {
-        const { id } = request.params;
+        const { id: albumId } = request.params;
         const { cover } = request.payload;
 
-        await this._albumsService.getAlbumById(id);
+        await this._albumsService.getAlbumById(albumId);
         this._validator.validateAlbumCoverHeader(cover.hapi.headers);
 
         const filename = await this._storageService.writeFile(cover, cover.hapi);
 
-        this._albumsService.editAlbumCoverById(id, `http://${process.env.HOST}:${process.env.PORT}/albumcover/${filename}`);
+        this._albumsService.editAlbumCoverById(albumId, `http://${process.env.HOST}:${process.env.PORT}/albumcover/${filename}`);
 
         const response = h.response({
             status: 'success',
@@ -43,13 +44,22 @@ class AlbumsHandler {
     }
 
     async getAlbumByIdHandler(request) {
-        const { id } = request.params;
-        const album = await this._albumsService.getAlbumById(id);
+        const { id: albumId } = request.params;
+
+        const album = await this._albumsService.getAlbumById(albumId);
+        const albumSongs = await this._songsService.getSongByAlbumId(albumId);
+
+        const result = album;
+        result.songs = albumSongs.map((song) => ({
+            id: song.id,
+            title: song.title,
+            performer: song.performer,
+        }));
 
         return {
             status: 'success',
             data: {
-                album,
+                album: result,
             },
         };
     }
@@ -57,8 +67,7 @@ class AlbumsHandler {
     async putAlbumByIdHandler(request) {
         this._validator.validateAlbumPayload(request.payload);
 
-        const { id } = request.params;
-        await this._albumsService.editAlbumById(id, request.payload);
+        await this._albumsService.editAlbumById(request.params.id, request.payload);
 
         return {
             status: 'success',
@@ -67,8 +76,7 @@ class AlbumsHandler {
     }
 
     async deleteAlbumByIdHandler(request) {
-        const { id } = request.params;
-        await this._albumsService.deleteAlbumById(id);
+        await this._albumsService.deleteAlbumById(request.params.id);
 
         return {
             status: 'success',
@@ -78,10 +86,9 @@ class AlbumsHandler {
 
     async postAlbumLikeHandler(request, h) {
         const { id: albumId } = request.params;
-        const { id: userIdCredential } = request.auth.credentials;
 
         await this._albumsService.getAlbumById(albumId);
-        await this._albumLikesService.addAlbumLike(albumId, userIdCredential);
+        await this._albumLikesService.addAlbumLike(albumId, request.auth.credentials.id);
 
         const response = h.response({
             status: 'success',
@@ -92,8 +99,7 @@ class AlbumsHandler {
     }
 
     async getAlbumLikesCountHandler(request, h) {
-        const { id: albumId } = request.params;
-        const likeCountResult = await this._albumLikesService.getAlbumLikesCount(albumId);
+        const likeCountResult = await this._albumLikesService.getAlbumLikesCount(request.params.id);
 
         const response = h.response({
             status: 'success',
@@ -107,10 +113,9 @@ class AlbumsHandler {
 
     async deleteAlbumLikeHandler(request) {
         const { id: albumId } = request.params;
-        const { id: userIdCredential } = request.auth.credentials;
 
         await this._albumsService.getAlbumById(albumId);
-        await this._albumLikesService.deleteAlbumLike(albumId, userIdCredential);
+        await this._albumLikesService.deleteAlbumLike(albumId, request.auth.credentials.id);
 
         return {
             status: 'success',

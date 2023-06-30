@@ -4,6 +4,7 @@ const { nanoid } = require('nanoid');
 const { Pool } = require('pg');
 const InvariantError = require('../../exceptions/InvariantError');
 const AuthenticationError = require('../../exceptions/AuthenticationError');
+const NotFoundError = require('../../exceptions/NotFoundError');
 
 class UserService {
     constructor() {
@@ -21,11 +22,24 @@ class UserService {
             values: [id, username, hashedPassword, fullname],
         });
 
-        if (result.rows.length !== 1) {
+        if (result.rowCount !== 1) {
             throw new InvariantError('Failed to add user');
         }
 
         return result.rows[0].id;
+    }
+
+    async getUserById(id) {
+        const result = await this._pool.query({
+            text: 'SELECT id, username, fullname FROM users WHERE id = $1',
+            values: [id],
+        });
+
+        if (result.rowCount !== 1) {
+            throw new NotFoundError('User not found');
+        }
+
+        return result.rows[0];
     }
 
     async checkNewUsername(username) {
@@ -34,7 +48,7 @@ class UserService {
             values: [username],
         });
 
-        if (result.rows.length !== 0) {
+        if (result.rowCount !== 0) {
             throw new InvariantError('Username already exists');
         }
     }
@@ -45,7 +59,7 @@ class UserService {
             values: [username],
         });
 
-        if (result.rows.length !== 1) {
+        if (result.rowCount !== 1) {
             throw new AuthenticationError('Wrong credentials');
         }
 

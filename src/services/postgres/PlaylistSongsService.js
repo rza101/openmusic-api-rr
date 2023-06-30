@@ -10,24 +10,6 @@ class PlaylistSongsService {
     }
 
     async addPlaylistSong({ playlistId, songId }) {
-        const checkPlaylistResult = await this._pool.query({
-            text: 'SELECT id FROM playlists WHERE id = $1',
-            values: [playlistId],
-        });
-
-        const checkSongResult = await this._pool.query({
-            text: 'SELECT id FROM songs WHERE id = $1',
-            values: [songId],
-        });
-
-        if (checkPlaylistResult.rows.length !== 1) {
-            throw new NotFoundError('Failed to add playlist song (playlist not found)');
-        }
-
-        if (checkSongResult.rows.length !== 1) {
-            throw new NotFoundError('Failed to add playlist song (song not found)');
-        }
-
         const id = `psong_${nanoid(32)}`;
 
         const result = await this._pool.query({
@@ -35,7 +17,7 @@ class PlaylistSongsService {
             values: [id, playlistId, songId],
         });
 
-        if (result.rows.length !== 1) {
+        if (result.rowCount !== 1) {
             throw new InvariantError('Failed to add playlist song');
         }
 
@@ -53,7 +35,7 @@ class PlaylistSongsService {
             values: [playlistId],
         });
 
-        if (result.rows.length !== 1) {
+        if (result.rowCount !== 1) {
             throw new NotFoundError('Playlist not found');
         }
 
@@ -80,7 +62,7 @@ class PlaylistSongsService {
             values: [playlistId, songId],
         });
 
-        if (result.rows.length !== 1) {
+        if (result.rowCount !== 1) {
             throw new InvariantError('Failed to delete playlist song (playlist or song not found)');
         }
     }

@@ -107,6 +107,7 @@ const CacheService = require('./services/redis/CacheService');
             options: {
                 albumsService,
                 albumLikesService,
+                songsService,
                 storageService,
                 validator: AlbumsValidator,
             },
@@ -116,6 +117,7 @@ const CacheService = require('./services/redis/CacheService');
             options: {
                 collaborationsService,
                 playlistsService,
+                usersService,
                 validator: CollaborationsValidator,
             },
         },
@@ -133,6 +135,7 @@ const CacheService = require('./services/redis/CacheService');
                 playlistsService,
                 playlistSongsService,
                 playlistSongActivitiesService,
+                songsService,
                 validator: PlaylistsValidator,
             },
         },

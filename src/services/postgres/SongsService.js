@@ -20,14 +20,12 @@ class SongsServices {
     }) {
         const id = `song_${nanoid(32)}`;
 
-        const query = {
+        const result = await this._pool.query({
             text: 'INSERT INTO songs (id, title, year, genre, performer, duration, album_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
             values: [id, title, year, genre, performer, duration, albumId],
-        };
+        });
 
-        const result = await this._pool.query(query);
-
-        if (result.rows.length !== 1) {
+        if (result.rowCount !== 1) {
             throw new InvariantError('Failed to add song');
         }
 
@@ -58,17 +56,25 @@ class SongsServices {
     }
 
     async getSongById(id) {
-        const query = {
+        const result = await this._pool.query({
             text: 'SELECT * FROM songs WHERE id = $1',
             values: [id],
-        };
-        const result = await this._pool.query(query);
+        });
 
-        if (result.rows.length !== 1) {
+        if (result.rowCount !== 1) {
             throw new NotFoundError('Song not found');
         }
 
         return result.rows[0];
+    }
+
+    async getSongByAlbumId(albumId) {
+        const result = await this._pool.query({
+            text: 'SELECT * FROM songs WHERE album_id = $1',
+            values: [albumId],
+        });
+
+        return result.rows;
     }
 
     async editSongById(id, {
@@ -79,25 +85,23 @@ class SongsServices {
         duration,
         albumId,
     }) {
-        const query = {
+        const result = await this._pool.query({
             text: 'UPDATE songs SET title = $1, year = $2, genre = $3, performer = $4, duration = $5, album_id = $6 WHERE id = $7 RETURNING id',
             values: [title, year, genre, performer, duration, albumId, id],
-        };
-        const result = await this._pool.query(query);
+        });
 
-        if (result.rows.length !== 1) {
+        if (result.rowCount !== 1) {
             throw new NotFoundError('Failed to edit song (not found)');
         }
     }
 
     async deleteSongById(id) {
-        const query = {
+        const result = await this._pool.query({
             text: 'DELETE FROM songs WHERE id = $1 RETURNING id',
             values: [id],
-        };
-        const result = await this._pool.query(query);
+        });
 
-        if (result.rows.length !== 1) {
+        if (result.rowCount !== 1) {
             throw new NotFoundError('Failed to delete song (not found)');
         }
     }

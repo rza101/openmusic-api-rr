@@ -25,7 +25,7 @@ class AlbumLikesService {
             values: [id, albumId, userId],
         });
 
-        if (!insertResult.rows.length) {
+        if (insertResult.rowCount !== 1) {
             throw new InvariantError('Failed to like album');
         }
 
@@ -62,7 +62,7 @@ class AlbumLikesService {
             values: [albumId, userId],
         });
 
-        if (!result.rows.length) {
+        if (result.rowCount !== 1) {
             throw new InvariantError('Failed to dislike album');
         }
 
