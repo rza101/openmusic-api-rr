@@ -1,12 +1,15 @@
 require('dotenv').config();
 
 const Hapi = require('@hapi/hapi');
+const Inert = require('@hapi/inert');
 const Jwt = require('@hapi/jwt');
+const path = require('path');
 
 const ClientError = require('./exceptions/ClientError');
 
 const AlbumsPlugin = require('./api/albums/index');
 const AlbumsService = require('./services/postgres/AlbumsService');
+const AlbumLikesService = require('./services/postgres/AlbumLikesService');
 const AlbumsValidator = require('./validators/albums/index');
 
 const AuthenticationsPlugin = require('./api/authentications/index');
@@ -17,11 +20,16 @@ const CollaborationsPlugin = require('./api/collaborations/index');
 const CollaborationsService = require('./services/postgres/CollaborationsService');
 const CollaborationsValidator = require('./validators/collaborations/index');
 
+const ExportsPlugin = require('./api/exports/index');
+const ExportsValidator = require('./validators/exports/index');
+
 const PlaylistsPlugin = require('./api/playlists/index');
 const PlaylistsService = require('./services/postgres/PlaylistsService');
 const PlaylistSongsService = require('./services/postgres/PlaylistSongsService');
 const PlaylistSongActivitiesService = require('./services/postgres/PlaylistSongActivitiesService');
 const PlaylistsValidator = require('./validators/playlists/index');
+
+const ProducerService = require('./services/rabbitmq/ProducerService');
 
 const SongsPlugin = require('./api/songs/index');
 const SongsService = require('./services/postgres/SongsService');
@@ -32,9 +40,15 @@ const UsersService = require('./services/postgres/UsersService');
 const UsersValidator = require('./validators/users/index');
 
 const { TokenManager } = require('./utils');
+const StorageService = require('./services/storage/StorageService');
+const CacheService = require('./services/redis/CacheService');
 
 (async () => {
+    const cacheService = new CacheService();
+    const storageService = new StorageService(path.resolve(__dirname, 'api/albums/uploads/file/album_covers'));
+
     const albumsService = new AlbumsService();
+    const albumLikesService = new AlbumLikesService(cacheService);
     const authenticationsService = new AuthenticationsService();
     const collaborationsService = new CollaborationsService();
     const playlistsService = new PlaylistsService(collaborationsService);
@@ -53,9 +67,14 @@ const { TokenManager } = require('./utils');
         },
     });
 
-    await server.register({
-        plugin: Jwt,
-    });
+    await server.register([
+        {
+            plugin: Jwt,
+        },
+        {
+            plugin: Inert,
+        },
+    ]);
 
     server.auth.strategy('openmusic_jwt', 'jwt', {
         keys: process.env.ACCESS_TOKEN_KEY,
@@ -86,7 +105,9 @@ const { TokenManager } = require('./utils');
         {
             plugin: AlbumsPlugin,
             options: {
-                service: albumsService,
+                albumsService,
+                albumLikesService,
+                storageService,
                 validator: AlbumsValidator,
             },
         },
@@ -96,6 +117,14 @@ const { TokenManager } = require('./utils');
                 collaborationsService,
                 playlistsService,
                 validator: CollaborationsValidator,
+            },
+        },
+        {
+            plugin: ExportsPlugin,
+            options: {
+                ProducerService,
+                playlistsService,
+                validator: ExportsValidator,
             },
         },
         {
@@ -139,6 +168,7 @@ const { TokenManager } = require('./utils');
 
             // server error emitted (>= 500)
             if (response.isServer) {
+                console.log(response);
                 const newResponse = h.response({
                     status: 'error',
                     message: 'Unexpected Server Error',

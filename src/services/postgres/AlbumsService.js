@@ -3,6 +3,7 @@ const { nanoid } = require('nanoid');
 const { Pool } = require('pg');
 const InvariantError = require('../../exceptions/InvariantError');
 const NotFoundError = require('../../exceptions/NotFoundError');
+const { mapAlbumsDBToAlbumsModel } = require('../../utils');
 
 class AlbumsService {
     constructor() {
@@ -48,7 +49,7 @@ class AlbumsService {
         };
         const resultSongs = await this._pool.query(querySongs);
 
-        const result = resultAlbum.rows[0];
+        const result = resultAlbum.rows.map(mapAlbumsDBToAlbumsModel)[0];
         result.songs = resultSongs.rows;
 
         return result;
@@ -58,6 +59,18 @@ class AlbumsService {
         const query = {
             text: 'UPDATE albums SET name = $1, year = $2 WHERE id = $3 RETURNING id',
             values: [name, year, id],
+        };
+        const result = await this._pool.query(query);
+
+        if (result.rows.length !== 1) {
+            throw new NotFoundError('Failed to edit album (not found)');
+        }
+    }
+
+    async editAlbumCoverById(id, coverUrl) {
+        const query = {
+            text: 'UPDATE albums SET cover_url = $1 WHERE id = $2 RETURNING id',
+            values: [coverUrl, id],
         };
         const result = await this._pool.query(query);
 

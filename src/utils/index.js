@@ -31,7 +31,19 @@ const TokenManager = {
 };
 
 // MAPPER
-const mapSongsDBToSongModel = ({
+const mapAlbumsDBToAlbumsModel = ({
+    id,
+    name,
+    year,
+    cover_url,
+}) => ({
+    id,
+    name,
+    year,
+    coverUrl: cover_url,
+});
+
+const mapSongsDBToSongsModel = ({
     id,
     title,
     year,
@@ -50,6 +62,7 @@ const mapSongsDBToSongModel = ({
 });
 
 module.exports = {
-    mapSongsDBToSongModel,
+    mapAlbumsDBToAlbumsModel,
+    mapSongsDBToSongsModel,
     TokenManager,
 };
